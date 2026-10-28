@@ -1,9 +1,19 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
+from .views import CourseProposalViewSet, CurriculumViewSet, ProposalEventLogViewSet
+
+# Создаем роутер для REST API
+router = DefaultRouter()
+router.register(r'course-proposals', CourseProposalViewSet, basename='course-proposal')
+router.register(r'curriculums', CurriculumViewSet, basename='curriculum')
+
+# Роутер для истории событий (вложенный или отдельный)
+proposal_router = DefaultRouter()
+proposal_router.register(r'events', ProposalEventLogViewSet, basename='proposal-event')
 
 urlpatterns = [
     path('profile/', views.profile, name='profile'),
-    path('courses/', views.course_list, name='course_list'),
 
     path('departments/', views.department_list, name='department_list'),
     path('departments/add/', views.department_create, name='department_create'),
@@ -21,5 +31,14 @@ urlpatterns = [
     path('courses/<int:pk>/delete/', views.course_delete, name='course_delete'),
 
     path('dashboard/', views.dashboard_view, name='dashboard'),
-]
 
+    # Подключаем основные API роуты
+    path('api/', include(router.urls)),
+
+    # Подключаем роуты истории событий для конкретных предложений
+    # URL будет выглядеть как: /api/course-proposals/{id}/events/
+    path('api/course-proposals/<int:proposal_pk>/', include(proposal_router.urls)),
+
+    path('course-approval/', views.course_approval_view, name='course_approval'),
+
+]

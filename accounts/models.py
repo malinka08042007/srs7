@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.conf import settings
+from django.utils import timezone
+
 
 class Department(models.Model):
     name = models.CharField(max_length=100)
@@ -92,3 +95,80 @@ class Violation(models.Model):
 
     def __str__(self):
         return f"Нарушение: {self.student.user.username} ({self.date})"
+
+class CourseProposal(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Черновик'),
+        ('submitted', 'На согласовании'),
+        ('approved', 'Согласован'),
+        ('rejected', 'Отклонен'),
+    ]
+
+    title = models.CharField(max_length=200, verbose_name="Название курса")
+    description = models.TextField(verbose_name="Описание и цели")
+    credits = models.PositiveIntegerField(default=3, verbose_name="Количество зачетных единиц")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name="Статус")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='course_proposals',
+                               verbose_name="Автор")
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='reviewed_proposals', verbose_name="Проверивший методист")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Предложение курса"
+        verbose_name_plural = "Предложения курсов"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} [{self.get_status_display()}]"
+
+
+class Curriculum(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Название плана")
+    academic_year = models.CharField(max_length=9, verbose_name="Учебный год")  # например "2025-2026"
+    total_credits = models.PositiveIntegerField(default=0, verbose_name="Общее количество ЗЕ")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+
+    class Meta:
+        verbose_name = "Учебный план"
+        verbose_name_plural = "Учебные планы"
+
+    def __str__(self):
+        return f"{self.name} ({self.academic_year})"
+
+
+class CurriculumCourseLink(models.Model):
+    curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, related_name='courses')
+    proposal = models.ForeignKey(CourseProposal, on_delete=models.CASCADE, related_name='curriculum_links')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Курс в учебном плане"
+        verbose_name_plural = "Курсы в учебных планах"
+        unique_together = ['curriculum', 'proposal']
+
+
+class ProposalEventLog(models.Model):
+    ACTION_CHOICES = [
+        ('CREATED', 'Создано'),
+        ('SUBMITTED', 'Отправлено на согласование'),
+        ('APPROVED', 'Согласовано'),
+        ('REJECTED', 'Отклонено'),
+        ('ADDED_TO_PLAN', 'Добавлено в учебный план'),
+    ]
+
+    proposal = models.ForeignKey(CourseProposal, on_delete=models.CASCADE, related_name='events')
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES, verbose_name="Действие")
+    details = models.TextField(blank=True, verbose_name="Подробности")
+    performed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+                                     verbose_name="Инициатор")
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "Событие предложения"
+        verbose_name_plural = "История событий"
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.proposal.title} - {self.get_action_display()} ({self.timestamp})"

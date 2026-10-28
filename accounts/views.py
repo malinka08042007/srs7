@@ -4,7 +4,13 @@ from django.shortcuts import  redirect, render, get_object_or_404
 from .models import AcademicGroup, Course, Department, StudentProfile
 from .forms import DepartmentForm, AcademicGroupForm, CourseForm
 
+from django.contrib.auth.decorators import login_required
+
 from django.db.models import Count, Q
+
+import csv
+from django.http import HttpResponse
+
 
 def is_methodist(user):
     return user.groups.filter(
@@ -379,3 +385,142 @@ def dashboard_view(request):
     }
 
     return render(request, 'dashboard.html', context)
+
+
+# accounts/views.py
+
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.db import transaction
+from .models import CourseProposal, Curriculum, CurriculumCourseLink, ProposalEventLog
+from .serializers import (CourseProposalSerializer, CurriculumSerializer,
+                          ProposalEventLogSerializer, ProposalStatusSerializer)
+
+
+class CourseProposalViewSet(viewsets.ModelViewSet):
+    serializer_class = CourseProposalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Методисты видят все, остальные - только свои
+        if user.groups.filter(name='Методист').exists():
+            return CourseProposal.objects.all().select_related('author', 'reviewer')
+        return CourseProposal.objects.filter(author=user).select_related('author', 'reviewer')
+
+    def perform_create(self, serializer):
+        proposal = serializer.save(author=self.request.user)
+        ProposalEventLog.objects.create(
+            proposal=proposal,
+            action='CREATED',
+            details='Предложение курса создано',
+            performed_by=self.request.user
+        )
+
+    @action(detail=True, methods=['patch'], url_path='change-status')
+    def change_status(self, request, pk=None):
+
+        proposal = self.get_object()
+        serializer = ProposalStatusSerializer(
+            data=request.data,
+            context={'proposal': proposal, 'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        new_status = serializer.validated_data['new_status']
+        comment = serializer.validated_data.get('comment', '')
+
+        try:
+            with transaction.atomic():  # ТРЕБОВАНИЕ П.6: ТРАНЗАКЦИЯ
+                old_status = proposal.status
+                proposal.status = new_status
+                proposal.reviewer = request.user
+                proposal.save()
+
+                # СОСТАВНАЯ ОПЕРАЦИЯ: При одобрении добавляем в активный учебный план
+                if new_status == 'approved':
+                    active_plan = Curriculum.objects.filter(is_active=True).first()
+                    if not active_plan:
+                        raise ValueError("Нет активного учебного плана для добавления курса")
+
+                    # Проверяем, не добавлен ли уже
+                    link, created = CurriculumCourseLink.objects.get_or_create(
+                        curriculum=active_plan,
+                        proposal=proposal
+                    )
+                    if created:
+                        # Обновляем общую нагрузку плана
+                        active_plan.total_credits += proposal.credits
+                        active_plan.save()
+
+                        ProposalEventLog.objects.create(
+                            proposal=proposal,
+                            action='ADDED_TO_PLAN',
+                            details=f'Добавлен в план "{active_plan.name}" (+{proposal.credits} ЗЕ)',
+                            performed_by=request.user
+                        )
+
+                # Логируем изменение статуса
+                ProposalEventLog.objects.create(
+                    proposal=proposal,
+                    action=f'STATUS_CHANGED: {old_status} -> {new_status}',
+                    details=comment or f'Статус изменен с "{proposal.get_status_display()}"',
+                    performed_by=request.user
+                )
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(CourseProposalSerializer(proposal).data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        qs = self.get_queryset()
+        return Response({
+            'total': qs.count(),
+            'draft': qs.filter(status='draft').count(),
+            'submitted': qs.filter(status='submitted').count(),
+            'approved': qs.filter(status='approved').count(),
+            'rejected': qs.filter(status='rejected').count(),
+        })
+
+
+class CurriculumViewSet(viewsets.ModelViewSet):
+    queryset = Curriculum.objects.all()
+    serializer_class = CurriculumSerializer
+    permission_classes = [permissions.IsAdminUser]  # Только админы управляют планами
+
+
+class ProposalEventLogViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ProposalEventLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        proposal_id = self.kwargs.get('proposal_pk')
+        if proposal_id:
+            return ProposalEventLog.objects.filter(proposal_id=proposal_id)
+
+        user = self.request.user
+        if user.groups.filter(name='Методист').exists():
+            return ProposalEventLog.objects.all()
+        return ProposalEventLog.objects.filter(proposal__author=user)
+
+
+@login_required
+def course_approval_view(request):
+    return render(request, 'accounts/course_approval.html')
+
+@action(detail=False, methods=['get'])
+def export_csv(self, request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="proposals.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['ID', 'Название', 'Автор', 'Статус', 'ЗЕ', 'Дата'])
+
+    for obj in self.get_queryset():
+        writer.writerow([obj.id, obj.title, obj.author.username, obj.get_status_display(), obj.credits,
+                         obj.created_at.strftime('%d.%m.%Y')])
+
+    return response
