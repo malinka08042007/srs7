@@ -126,7 +126,7 @@ class CourseProposal(models.Model):
 
 class Curriculum(models.Model):
     name = models.CharField(max_length=200, verbose_name="Название плана")
-    academic_year = models.CharField(max_length=9, verbose_name="Учебный год")  # например "2025-2026"
+    academic_year = models.CharField(max_length=9, verbose_name="Учебный год")
     total_credits = models.PositiveIntegerField(default=0, verbose_name="Общее количество ЗЕ")
     is_active = models.BooleanField(default=True, verbose_name="Активен")
 
@@ -159,7 +159,7 @@ class ProposalEventLog(models.Model):
     ]
 
     proposal = models.ForeignKey(CourseProposal, on_delete=models.CASCADE, related_name='events')
-    action = models.CharField(max_length=20, choices=ACTION_CHOICES, verbose_name="Действие")
+    action = models.CharField(max_length=100, choices=ACTION_CHOICES, verbose_name="Действие") # УВЕЛИЧЕНО до 100
     details = models.TextField(blank=True, verbose_name="Подробности")
     performed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
                                      verbose_name="Инициатор")
