@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block title %}Сводки Инквизитора{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none mb-4">
+    <div class="row align-items-center">
+        <div class="col">
+            <h2 class="page-title" style="font-weight: 700; color: #880e4f;">
+                <i class="ti ti-report-analytics me-2"></i> Сводки Инквизитора
+            </h2>
+            <p class="text-muted mt-1">Оперативная информация о состоянии дел в Хогвартсе</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        {% include 'components/dashboard_card.html' with title="Всего учеников" value=total_students subtitle="Под строгим надзором" %}
+    </div>
+    <div class="col-md-4">
+        {% include 'components/dashboard_card.html' with title="Учебных групп" value=total_groups subtitle="Контролируемых единиц" %}
+    </div>
+    <div class="col-md-4">
+        {% include 'components/dashboard_card.html' with title="Уровень порядка" value="98%" subtitle="По данным министерства" %}
+    </div>
+</div>
+
+<div class="card shadow-sm border-0" style="background-color: #fff5f8; min-height: 550px;">
+    <div class="card-body p-0">
+        <div class="row g-0 h-100">
+
+            <div class="col-lg-3 col-xl-2 border-end" style="background-color: #fce4ec;">
+                <div class="nav flex-column nav-pills p-3 h-100" id="v-pills-tab" role="tablist">
+
+                    <button class="nav-link active text-start mb-2 fw-bold d-flex align-items-center"
+                            id="v-pills-faculties-tab"
+                            data-bs-toggle="pill"
+                            data-bs-target="#v-pills-faculties"
+                            type="button"
+                            role="tab"
+                            aria-selected="true">
+                        <i class="ti ti-building-castle me-2 fs-5"></i> Факультеты
+                    </button>
+
+                    <button class="nav-link text-start mb-2 fw-bold d-flex align-items-center"
+                            id="v-pills-love-tab"
+                            data-bs-toggle="pill"
+                            data-bs-target="#v-pills-love"
+                            type="button"
+                            role="tab"
+                            aria-selected="false">
+                        <i class="ti ti-heart-broken me-2 fs-5"></i> Отношения
+                    </button>
+
+                    <!-- КНОПКА 3: КУРСЫ -->
+                    <button class="nav-link text-start mb-2 fw-bold d-flex align-items-center"
+                            id="v-pills-courses-tab"
+                            data-bs-toggle="pill"
+                            data-bs-target="#v-pills-courses"
+                            type="button"
+                            role="tab"
+                            aria-selected="false">
+                        <i class="ti ti-books me-2 fs-5"></i> Курсы
+                    </button>
+
+                    <!-- КНОПКА 4: НАРУШИТЕЛИ -->
+                    <button class="nav-link text-start mb-2 fw-bold d-flex align-items-center"
+                            id="v-pills-violators-tab"
+                            data-bs-toggle="pill"
+                            data-bs-target="#v-pills-violators"
+                            type="button"
+                            role="tab"
+                            aria-selected="false">
+                        <i class="ti ti-user-x me-2 fs-5"></i> Нарушители
+                    </button>
+
+                </div>
+            </div>
+
+
+
+            <div class="col-lg-9 col-xl-10 p-4">
+                <div class="tab-content h-100" id="v-pills-tabContent">
+
+                    <div class="tab-pane fade show active h-100" id="v-pills-faculties" role="tabpanel" aria-labelledby="v-pills-faculties-tab">
+                        <h4 class="mb-4 fw-bold" style="color: #ad1457;">Распределение контингента</h4>
+                        <div style="height: 400px; position: relative;">
+                            <canvas id="deptChart"></canvas>
+                        </div>
+                        <p class="text-center text-muted small mt-3 fst-italic">* Данные актуальны на момент последней проверки Инквизиторской комиссии</p>
+                    </div>
+
+                    <div class="tab-pane fade h-100" id="v-pills-love" role="tabpanel" aria-labelledby="v-pills-love-tab">
+                        <h4 class="mb-4 fw-bold" style="color: #ad1457;">Статус отношений (Запрещено!)</h4>
+                        <div style="height: 400px; position: relative;">
+                            <canvas id="loveChart"></canvas>
+                        </div>
+                        <p class="text-center text-muted small mt-3 fst-italic">* Нарушители направлены на немедленное перевоспитание</p>
+                    </div>
+
+                    <div class="tab-pane fade h-100" id="v-pills-courses" role="tabpanel" aria-labelledby="v-pills-courses-tab">
+                        <h4 class="mb-4 fw-bold" style="color: #ad1457;">Популярность учебных дисциплин</h4>
+                        <div style="height: 400px; position: relative;">
+                            <canvas id="popularityChart"></canvas>
+                        </div>
+                        <p class="text-center text-muted small mt-3 fst-italic">* Топ-8 наиболее посещаемых курсов для анализа предпочтений</p>
+                    </div>
+
+                    <div class="tab-pane fade h-100" id="v-pills-violators" role="tabpanel" aria-labelledby="v-pills-violators-tab">
+                        <h4 class="mb-4 fw-bold" style="color: #ad1457;">Топ-5 нарушителей дисциплины</h4>
+                        <div style="height: 400px; position: relative;">
+                            <canvas id="topViolatorsChart"></canvas>
+                        </div>
+                        <p class="text-center text-muted small mt-3 fst-italic">* Личный список Инквизитора для особого контроля</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    Chart.defaults.font.family = "'Segoe UI', 'Roboto', sans-serif";
+    Chart.defaults.color = '#880e4f';
+
+    const ctxDept = document.getElementById('deptChart');
+    if (ctxDept) {
+        new Chart(ctxDept, {
+            type: 'doughnut',
+            data: {
+                labels: {{ dept_labels|safe }},
+                datasets: [{
+                    data: {{ dept_data|safe }},
+                    backgroundColor: ['#e1bee7', '#f8bbd0', '#b39ddb', '#ce93d8'],
+                    borderWidth: 3, borderColor: '#fff5f8'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '65%',
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } }
+            }
+        });
+    }
+
+    const ctxLove = document.getElementById('loveChart');
+    if (ctxLove) {
+        new Chart(ctxLove, {
+            type: 'bar',
+            data: {
+                labels: ['Холостяки ', 'Парочки ️'],
+                datasets: [{
+                    data: [{{ singles_count }}, {{ couples_count }}],
+                    backgroundColor: ['#c8e6c9', '#ef9a9a'],
+                    borderRadius: 10, barPercentage: 0.5
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, grid: { color: '#fce4ec' } }, x: { grid: { display: false } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    const ctxPop = document.getElementById('popularityChart');
+    if (ctxPop) {
+        new Chart(ctxPop, {
+            type: 'bar',
+            data: {
+                labels: {{ pop_labels|safe }},
+                datasets: [{ label: 'Ученики', data: {{ pop_data|safe }}, backgroundColor: '#ce93d8', borderRadius: 6 }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                scales: { x: { beginAtZero: true, grid: { color: '#fce4ec' } }, y: { grid: { display: false } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    const ctxViol = document.getElementById('topViolatorsChart');
+    if (ctxViol) {
+        new Chart(ctxViol, {
+            type: 'bar',
+            data: {
+                labels: {{ top_violator_names|safe }},
+                datasets: [{ label: 'Нарушений', data: {{ top_violator_counts|safe }}, backgroundColor: '#ef9a9a', borderRadius: 6 }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#fce4ec' } }, y: { grid: { display: false } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

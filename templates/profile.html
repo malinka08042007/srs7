@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Профиль {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+
+        <div class="card shadow-sm">
+            <div class="card-header" style="background-color: #fff0f5; border-bottom: 1px solid #f8bbd0;">
+                <h3 class="card-title" style="color: #880e4f; font-weight: 700;">
+                    <i class="ti ti-user-circle me-2"></i> Личный кабинет
+                </h3>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label text-muted small mb-1">Пользователь</label>
+                        <div class="fw-bold fs-4">{{ user.username }}</div>
+                    </div>
+
+                    {% if user.email %}
+                    <div class="col-12">
+                        <label class="form-label text-muted small mb-1">Email</label>
+                        <div>{{ user.email }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if profile.department %}
+                    <div class="col-12">
+                        <label class="form-label text-muted small mb-1">Факультет</label>
+                        <span class="badge badge-dept">{{ profile.department.name }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if profile.academic_group %}
+                    <div class="col-12">
+                        <label class="form-label text-muted small mb-1">Учебная группа</label>
+                        <span class="badge bg-secondary" style="background-color: #e1bee7 !important; color: #4a148c !important;">
+                            {{ profile.academic_group.name }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    {% if is_methodist %}
+                    <div class="col-12 mt-3">
+                        <div class="alert d-flex align-items-center p-3"
+                             style="background-color: #f3e5f5; color: #7b1fa2; border-radius: 10px; border: none;">
+                            <i class="ti ti-shield-check fs-3 me-3"></i>
+                            <div>
+                                <strong>Статус: Методист</strong>
+
+                                <small>У вас есть права на управление учебными данными.</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card-footer bg-transparent border-top-0 pb-4 px-4">
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger w-100">
+                        <i class="ti ti-logout me-2"></i> Выйти из системы
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

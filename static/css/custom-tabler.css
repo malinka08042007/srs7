@@ -1,0 +1,110 @@
+:root {
+    --tblr-body-bg: #fff0f5;
+    --tblr-primary: #d63384;
+    --tblr-primary-rgb: 214, 51, 132;
+    --tblr-card-bg: #ffffff;
+    --tblr-border-color: #f8bbd0;
+}
+
+body {
+    font-size: 16px;
+    color: #4a3b42;
+}
+
+.table thead th {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #d63384;
+    font-weight: 700;
+    border-bottom: 2px solid #fce4ec !important;
+}
+
+.table td {
+    font-size: 1.05rem;
+    vertical-align: middle;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: #fdf2f8;
+}
+
+.card {
+    border: 1px solid var(--tblr-border-color);
+    box-shadow: 0 4px 15px rgba(214, 51, 132, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.badge-dept {
+    background-color: #e1bee7 !important;
+    color: #4a148c !important;
+    font-weight: 600;
+    padding: 0.5em 0.9em;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 5px rgba(225, 190, 231, 0.4);
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    padding: 1rem 3rem;
+
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+    white-space: nowrap;
+}
+
+.btn-edit {
+    background-color: #f8bbd0;
+    color: #880e4f;
+}
+.btn-edit:hover {
+    background-color: #f48fb1;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(244, 143, 177, 0.4);
+}
+
+.btn-delete {
+    background-color: #ec407a;
+    color: #ffffff;
+}
+.btn-delete:hover {
+    background-color: #d81b60;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(236, 64, 122, 0.4);
+}
+
+.btn-add-main {
+    padding: 0.6rem 1.5rem;
+    font-size: 1.05rem;
+    border-radius: 10px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(214, 51, 132, 0.25);
+}
+
+.nav-pills .nav-link.active {
+    background-color: #f8bbd0 !important;
+    color: #880e4f !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 5px rgba(248, 187, 208, 0.4);
+}
+
+.nav-pills .nav-link:hover:not(.active) {
+    background-color: #fce4ec !important;
+    color: #ad1457 !important;
+}
+
+.nav-pills .nav-link:focus {
+    box-shadow: none !important;
+}

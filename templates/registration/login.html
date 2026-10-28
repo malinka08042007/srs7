@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Вход в систему{% endblock %}
+
+{% block content %}
+<div class="page-single">
+    <div class="container-xl d-flex flex-column justify-content-center align-items-center min-vh-100 py-5">
+        <div class="row g-4 w-100 justify-content-center">
+            <div class="col-sm-8 col-md-6 col-lg-4">
+
+                <div class="card card-stacked">
+                    <div class="card-body p-5">
+                        <h2 class="text-center mb-4 fw-bold" style="color: #880e4f;">Учебный Портал</h2>
+                        <p class="text-muted text-center mb-4">Введите данные для доступа к системе</p>
+
+                        <form method="post">
+                            {% csrf_token %}
+
+                            <div class="mb-3">
+                                <label class="form-label required">Имя пользователя</label>
+                                <input type="text" name="username" class="form-control form-control-lg"
+                                       placeholder="student1 или methodist" required autofocus>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label required">Пароль</label>
+                                <input type="password" name="password" class="form-control form-control-lg"
+                                       placeholder="••••••••" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 btn-lg py-3 fw-bold">
+                                Войти в систему
+                            </button>
+
+                            {% if form.errors %}
+                            <div class="alert alert-danger mt-3 text-center small">
+                                Неверное имя пользователя или пароль.
+                            </div>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+
+                <p class="text-center text-muted mt-4 small">
+                    © 2026 Учебный портал. Все права защищены.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
